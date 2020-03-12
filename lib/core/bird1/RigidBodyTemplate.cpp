@@ -17,7 +17,6 @@ RigidBodyTemplate::RigidBodyTemplate(Eigen::Ref<Eigen::MatrixX3d> V,
     inertiaTensor_.setZero();
     this->V = V * scale;
     this->F = F;
-
     initialize();
 }
 
@@ -37,7 +36,15 @@ void RigidBodyTemplate::initialize()
 double RigidBodyTemplate::computeVolume()
 {
     double volume = 0;
-    // TODO : Compute Volume with Stokes Theorem
+    int faceCount = F.rows();
+    for (int i = 0; i < faceCount; i++)
+    {
+        Eigen::Vector3i indices = F.row(i); 
+        Vector3d T0 = V.row(indices[0]);
+        Vector3d T1 = V.row(indices[1]);
+        Vector3d T2 = V.row(indices[2]);
+        volume += 1.0/6.0 * (T0[0] + T1[0] + T2[0]) * (T1 - T0).cross(T2 - T0)[0];
+    }
     return volume;
 }
 
