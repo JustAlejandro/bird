@@ -1,17 +1,18 @@
-# Introduction to Physical Simulation Project Starter Code
+# Bird Up
+## Worst Show on Television
 
 ## Preamble
 
-We are going to use the same monolithic git repository to development all your
-physical simulation code, and the following instructions applies to all your
-projects.
+Note: this is a 'fork' of the starter code as in, this isn't really a
+fork, this is just a hard pull of all the dependencies of the project
+to avoid wierd unfixable bugs that occur with the original repo.
 
 ## General Build Instruction
 
 This is a standard cmake project, with a few bundled git modules.
 To build this project, run:
 ```
-git clone --recursive https://github.com/xinyazhang/psim_starter_code psim
+git clone https://github.com/xinyazhang/psim_starter_code psim
 cd psim
 mkdir build
 cd build
