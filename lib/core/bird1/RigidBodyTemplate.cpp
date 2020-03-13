@@ -28,10 +28,18 @@ void RigidBodyTemplate::initialize()
 {
     volume_ = computeVolume();
     com_ = computeCenterOfMass();
+    translateCOM();
     // TODO: Translate center of mass to origin
     inertiaTensor_ = computeInertiaTensor();    
 }
 
+void RigidBodyTemplate::translateCOM(){
+    for (int i = 0; i < V.rows(); i++)
+    {
+        V.row(i) = V.row(i) - com_.transpose();
+    }
+    com_ = Vector3d(0,0,0);
+}
 
 double RigidBodyTemplate::computeVolume()
 {
@@ -52,7 +60,7 @@ Vector3d RigidBodyTemplate::computeCenterOfMass()
 {
     Vector3d cm(0, 0, 0);
     int faceCount = F.rows();
-    
+
     for (int i = 0; i < faceCount; i++)
     {
         Eigen::Vector3i indices = F.row(i); 

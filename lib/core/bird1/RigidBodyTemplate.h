@@ -36,6 +36,7 @@ private:
     double computeVolume();
     Eigen::Vector3d computeCenterOfMass();
     Eigen::Matrix3d computeInertiaTensor();
+    void translateCOM();
 
     Eigen::MatrixX3d V;
     Eigen::MatrixX3i F;
