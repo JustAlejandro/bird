@@ -51,9 +51,27 @@ double RigidBodyTemplate::computeVolume()
 Vector3d RigidBodyTemplate::computeCenterOfMass()
 {
     Vector3d cm(0, 0, 0);
-    // TODO: computer center of mass
+    int faceCount = F.rows();
+    
+    for (int i = 0; i < faceCount; i++)
+    {
+        Eigen::Vector3i indices = F.row(i); 
+        Vector3d T0 = V.row(indices[0]);
+        Vector3d T1 = V.row(indices[1]);
+        Vector3d T2 = V.row(indices[2]);
 
-    return cm;
+        Vector3d cur(0,0,0);
+        cur += 1.0/2.0 * T0.cwiseProduct(T0);
+        cur += 1.0/3.0 * (T1 - T0).cwiseProduct(T0);
+        cur += 1.0/3.0 * (T2 - T0).cwiseProduct(T0);
+        cur += 1.0/12.0 * (T1 - T0).cwiseProduct(T2 - T0);
+        cur += 1.0/12.0 * (T1 - T0).cwiseProduct(T1 - T0);
+        cur += 1.0/12.0 * (T2 - T0).cwiseProduct(T2 - T0);
+        cur = cur.cwiseProduct(T1 - T0).cross(T2 - T0);
+        cm += cur;
+    }
+
+    return (cm / 2.0) / volume_;
 }
 
 Eigen::Matrix3d
