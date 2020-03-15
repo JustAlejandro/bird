@@ -37,6 +37,7 @@ private:
     Eigen::Vector3d computeCenterOfMass();
     Eigen::Matrix3d computeInertiaTensor();
     void translateCOM();
+    double computeInertiaQuadraticTerm(const double& a, const double& b, const double& c);
 
     Eigen::MatrixX3d V;
     Eigen::MatrixX3i F;
