@@ -75,7 +75,7 @@ Vector3d RigidBodyTemplate::computeCenterOfMass()
         cur += 1.0/12.0 * (T1 - T0).cwiseProduct(T2 - T0);
         cur += 1.0/12.0 * (T1 - T0).cwiseProduct(T1 - T0);
         cur += 1.0/12.0 * (T2 - T0).cwiseProduct(T2 - T0);
-        cur = cur.cwiseProduct(T1 - T0).cross(T2 - T0);
+        cur = cur.cwiseProduct((T1 - T0).cross(T2 - T0));
         cm += cur;
     }
 
@@ -115,6 +115,7 @@ double computeXSquaredYSquaredTerm(Vector3d a, Vector3d b, Vector3d c, int type)
             throw "Invalid Call";
             break;
     }
+    //(z2 + y2)x
     //First Term
     double firstTerm = 5.0 * a(i0) * c(i1) * c(i1) + 10.0 * a(i1) * c(i0) * c(i1);
     firstTerm += 10.0 * a(i1) * c(i0) * c(i1);
