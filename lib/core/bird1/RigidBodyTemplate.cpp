@@ -115,55 +115,27 @@ double computeXSquaredYSquaredTerm(Vector3d a, Vector3d b, Vector3d c, int type)
             throw "Invalid Call";
             break;
     }
-    // //(z2 + y2)x
-    // //First Term
-    // double firstTerm = 5.0 * a(i0) * c(i1) * c(i1) + 10.0 * a(i1) * c(i0) * c(i1);
-    // firstTerm += 10.0 * a(i1) * c(i0) * c(i1);
-    // firstTerm += 5.0 * a(i0) * c(i2) * c(i2);
-    // firstTerm += 10.0 * a(i2) * c(i0) * c(i2);
-    // firstTerm += b(i0) * c(i1) * c(i1);
-    // firstTerm += 2.0 * b(i1) * c(i0) * c(i1);
-    // firstTerm += 2.0 * b(i2) * c(i0) * c(i2);
-    // firstTerm /= 60.0;
 
-    // //Second term;
-    // double secondTerm = a(i1) * (c(i1) * (4.0 * a(i0) + b(i0))) + b(i1) * c(i0);
-    // secondTerm += a(i2) * (c(i2) * (4.0 * a(i0) + b(i0)) + b(i2) * c(0));
-    // secondTerm /= 12.0;
+    double x0 = a(i0), x1 = b(i0), x2 = c(i0);
+    double y0 = a(i1), y1 = b(i1), y2 = c(i1);
+    double z0 = a(i2), z1 = b(i2), z2 = c(i2);
+    double toRet = (x0*y0*y0)/20 + (x0*y1*y1)/60 + (x1*y0*y0)/60 + (x0*y2*y2)/60 + (x1*y1*y1)/20 + (x2*y0*y0)/60 + (x1*y2*y2)/60 + (x2*y1*y1)/60 + (x2*y2*y2)/20 + (x0*z0*z0)/20 + (x0*z1*z1)/60 + (x1*z0*z0)/60 + (x0*z2*z2)/60 + (x1*z1*z1)/20 + (x2*z0*z0)/60 + (x1*z2*z2)/60 + (x2*z1*z1)/60 + (x2*z2*z2)/20 + (x0*y0*y1)/30 + (x0*y0*y2)/30 + (x1*y0*y1)/30 + (x0*y1*y2)/60 + (x1*y0*y2)/60 + (x2*y0*y1)/60 + (x1*y1*y2)/30 + (x2*y0*y2)/30 + (x2*y1*y2)/30 + (x0*z0*z1)/30 + (x0*z0*z2)/30 + (x1*z0*z1)/30 + (x0*z1*z2)/60 + (x1*z0*z2)/60 + (x2*z0*z1)/60 + (x1*z1*z2)/30 + (x2*z0*z2)/30 + (x2*z1*z2)/30;
 
-    // //Third Term
-    // double thirdTerm = 5.0 * a(i0) * b(i1) * c(i1);
-    // thirdTerm += 5.0 * a(i0) * b(i2) * c(i2);
-    // thirdTerm += 10.0 * a(i1) * a(i1) * c(i0);
-    // thirdTerm += 10.0 * a(i2) * a(i2) * c(i0);
-    // thirdTerm += b(i1) * b(i1) * c(i0);
-    // thirdTerm += b(i2) * b(i2) * c(i0);
-    // thirdTerm += 2.0 * b(i0) * b(i1) * c(i1);
-    // thirdTerm += 2.0 * b(i0) * b(i2) * c(i2);
-    // thirdTerm /= 60.0;
+    return toRet * (b-a).cross(c-a)(type);
+}
 
-    // //Fourth Term
-    // double fourthTerm = 4.0 * (a(i1) * b(i1) + a(i2) * b(i2));
-    // fourthTerm += 6.0 * (a(i1) * a(i1) + a(i2) * a(i2));
-    // fourthTerm += b(i1) * b(i1) + b(i2) * b(i2);
-    // fourthTerm *= 5.0 * a(i0);
+double computeXYZTerm(Vector3d a, Vector3d b, Vector3d c, int type){
+    int i0,i1,i2;
+    i0 = 0;
+    i1 = 1;
+    i2 = 2; 
 
-    // double fourthTerm2 = 10.0 * (a(i1) * b(i1) + a(i2) * b(i2) + a(i1) * a(i1) + a(i2) * a(i2));
-    // fourthTerm2 += 3.0 * (b(i1) * b(i1) + b(i2) * b(i2));
-    // fourthTerm2 *= b(i0);
+    double x0 = a(i0), x1 = b(i0), x2 = c(i0);
+    double y0 = a(i1), y1 = b(i1), y2 = c(i1);
+    double z0 = a(i2), z1 = b(i2), z2 = c(i2);
 
-    // fourthTerm += fourthTerm2;
-    // fourthTerm /= 60.0;
-
-    // //Fifth Term
-    // double fifthTerm = (1.0/20.0) * c(i0) * (c(i1) * c(i1) + c(i2) * c(i2));
-
-    double firstTerm = 1.0/12.0*a(i1)*(2.0*a(i1)*(b(i0) + c(i0)) + a(i0)*(6.0*a(i1) + 4.0*(b(i1) + c(i1))) + b(i1)*(2.0*b(i0) + c(i0)) + c(i1)*(b(i0) + 2.0*c(i0)));
-    double secondTerm = 1.0/60.0*(5.0*a(i0)*(b(i1)*c(i1) + b(i1)*b(i1) + c(i1)*c(i1)) + b(i0)*(2.0*b(i1)*c(i1) + 3.0*b(i1)*b(i1) + c(i1)*c(i1)) + c(i0)*(2.0*b(i1)*c(i1) + b(i1)*b(i1) + 3.0*c(i1)*c(i1)));
-    double thirdTerm = 1.0/12.0*a(i2)*(2.0*a(i2)*(b(i0) + c(i0)) + a(i0)*(6.0*a(i2) + 4.0*(b(i2) + c(i2))) + b(i2)*(2.0*b(i0) + c(i0)) + c(i2)*(b(i0) + 2.0*c(i0)));
-    double fourthTerm = 1.0/60.0*(5.0*a(i0)*(b(i2)*c(i2) + b(i2)*b(i2) + c(i2)*c(i2)) + b(i0)*(2.0*b(i2)*c(i2) + 3.0*b(i2)*b(i2) + c(i2)*c(i2)) + c(i0)*(2.0*b(i2)*c(i2) + b(i2)*b(i2) + 3.0*c(i2)*c(i2)));
-    
-    return (firstTerm + secondTerm + thirdTerm + fourthTerm) * (b-a).cross(c-a)(type);
+    double toRet = (x0*y0*z0)/20 + (x0*y0*z1)/60 + (x0*y1*z0)/60 + (x1*y0*z0)/60 + (x0*y0*z2)/60 + (x0*y1*z1)/60 + (x0*y2*z0)/60 + (x1*y0*z1)/60 + (x1*y1*z0)/60 + (x2*y0*z0)/60 + (x0*y1*z2)/120 + (x0*y2*z1)/120 + (x1*y0*z2)/120 + (x1*y1*z1)/20 + (x1*y2*z0)/120 + (x2*y0*z1)/120 + (x2*y1*z0)/120 + (x0*y2*z2)/60 + (x1*y1*z2)/60 + (x1*y2*z1)/60 + (x2*y0*z2)/60 + (x2*y1*z1)/60 + (x2*y2*z0)/60 + (x1*y2*z2)/60 + (x2*y1*z2)/60 + (x2*y2*z1)/60 + (x2*y2*z2)/20;
+    return -1.0 * toRet * (b-a).cross(c-a)(type);
 }
 
 Eigen::Matrix3d
@@ -180,8 +152,21 @@ RigidBodyTemplate::computeInertiaTensor()
         Vector3d T1 = V.row(indices[1]);
         Vector3d T2 = V.row(indices[2]);
 
-        inertiaTensor(0,0) += computeXSquaredYSquaredTerm(T0, T1, T2, 0);
-        
+        //Compute Diagonal
+        for(int i = 0; i < 3; i++)
+            inertiaTensor(i,i) += computeXSquaredYSquaredTerm(T0, T1, T2, i);
+        double integral = computeXYZTerm(T0, T1, T2, 2);
+        inertiaTensor(0,1) += integral;
+        inertiaTensor(1,0) += integral;
+
+        integral = computeXYZTerm(T0, T1, T2, 1);
+        inertiaTensor(0,2) += integral;
+        inertiaTensor(2,0) += integral;
+
+        integral = computeXYZTerm(T0, T1, T2, 0);
+        inertiaTensor(1,2) += integral;
+        inertiaTensor(2,1) += integral;
+
     }
     
     cout << inertiaTensor <<endl;
