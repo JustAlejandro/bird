@@ -115,50 +115,55 @@ double computeXSquaredYSquaredTerm(Vector3d a, Vector3d b, Vector3d c, int type)
             throw "Invalid Call";
             break;
     }
-    //(z2 + y2)x
-    //First Term
-    double firstTerm = 5.0 * a(i0) * c(i1) * c(i1) + 10.0 * a(i1) * c(i0) * c(i1);
-    firstTerm += 10.0 * a(i1) * c(i0) * c(i1);
-    firstTerm += 5.0 * a(i0) * c(i2) * c(i2);
-    firstTerm += 10.0 * a(i2) * c(i0) * c(i2);
-    firstTerm += b(i0) * c(i1) * c(i1);
-    firstTerm += 2.0 * b(i1) * c(i0) * c(i1);
-    firstTerm += 2.0 * b(i2) * c(i0) * c(i2);
-    firstTerm /= 60.0;
+    // //(z2 + y2)x
+    // //First Term
+    // double firstTerm = 5.0 * a(i0) * c(i1) * c(i1) + 10.0 * a(i1) * c(i0) * c(i1);
+    // firstTerm += 10.0 * a(i1) * c(i0) * c(i1);
+    // firstTerm += 5.0 * a(i0) * c(i2) * c(i2);
+    // firstTerm += 10.0 * a(i2) * c(i0) * c(i2);
+    // firstTerm += b(i0) * c(i1) * c(i1);
+    // firstTerm += 2.0 * b(i1) * c(i0) * c(i1);
+    // firstTerm += 2.0 * b(i2) * c(i0) * c(i2);
+    // firstTerm /= 60.0;
 
-    //Second term;
-    double secondTerm = a(i1) * (c(i1) * (4.0 * a(i0) + b(i0))) + b(i1) * c(i0);
-    secondTerm += a(i2) * (c(i2) * (4.0 * a(i0) + b(i0)) + b(i2) * c(0));
-    secondTerm /= 12.0;
+    // //Second term;
+    // double secondTerm = a(i1) * (c(i1) * (4.0 * a(i0) + b(i0))) + b(i1) * c(i0);
+    // secondTerm += a(i2) * (c(i2) * (4.0 * a(i0) + b(i0)) + b(i2) * c(0));
+    // secondTerm /= 12.0;
 
-    //Third Term
-    double thirdTerm = 5.0 * a(i0) * b(i1) * c(i1);
-    thirdTerm += 5.0 * a(i0) * b(i2) * c(i2);
-    thirdTerm += 10.0 * a(i1) * a(i1) * c(i0);
-    thirdTerm += 10.0 * a(i2) * a(i2) * c(i0);
-    thirdTerm += b(i1) * b(i1) * c(i0);
-    thirdTerm += b(i2) * b(i2) * c(i0);
-    thirdTerm += 2.0 * b(i0) * b(i1) * c(i1);
-    thirdTerm += 2.0 * b(i0) * b(i2) * c(i2);
-    thirdTerm /= 60.0;
+    // //Third Term
+    // double thirdTerm = 5.0 * a(i0) * b(i1) * c(i1);
+    // thirdTerm += 5.0 * a(i0) * b(i2) * c(i2);
+    // thirdTerm += 10.0 * a(i1) * a(i1) * c(i0);
+    // thirdTerm += 10.0 * a(i2) * a(i2) * c(i0);
+    // thirdTerm += b(i1) * b(i1) * c(i0);
+    // thirdTerm += b(i2) * b(i2) * c(i0);
+    // thirdTerm += 2.0 * b(i0) * b(i1) * c(i1);
+    // thirdTerm += 2.0 * b(i0) * b(i2) * c(i2);
+    // thirdTerm /= 60.0;
 
-    //Fourth Term
-    double fourthTerm = 4.0 * (a(i1) * b(i1) + a(i2) * b(i2));
-    fourthTerm += 6.0 * (a(i1) * a(i1) + a(i2) * a(i2));
-    fourthTerm += b(i1) * b(i1) + b(i2) * b(i2);
-    fourthTerm *= 5.0 * a(i0);
+    // //Fourth Term
+    // double fourthTerm = 4.0 * (a(i1) * b(i1) + a(i2) * b(i2));
+    // fourthTerm += 6.0 * (a(i1) * a(i1) + a(i2) * a(i2));
+    // fourthTerm += b(i1) * b(i1) + b(i2) * b(i2);
+    // fourthTerm *= 5.0 * a(i0);
 
-    double fourthTerm2 = 10.0 * (a(i1) * b(i1) + a(i2) * b(i2) + a(i1) * a(i1) + a(i2) * a(i2));
-    fourthTerm2 += 3.0 * (b(i1) * b(i1) + b(i2) * b(i2));
-    fourthTerm2 *= b(i0);
+    // double fourthTerm2 = 10.0 * (a(i1) * b(i1) + a(i2) * b(i2) + a(i1) * a(i1) + a(i2) * a(i2));
+    // fourthTerm2 += 3.0 * (b(i1) * b(i1) + b(i2) * b(i2));
+    // fourthTerm2 *= b(i0);
 
-    fourthTerm += fourthTerm2;
-    fourthTerm /= 60.0;
+    // fourthTerm += fourthTerm2;
+    // fourthTerm /= 60.0;
 
-    //Fifth Term
-    double fifthTerm = (1.0/20.0) * c(i0) * (c(i1) * c(i1) + c(i2) * c(i2));
+    // //Fifth Term
+    // double fifthTerm = (1.0/20.0) * c(i0) * (c(i1) * c(i1) + c(i2) * c(i2));
 
-    return (firstTerm + secondTerm + thirdTerm + fourthTerm + fifthTerm) * (b-a).cross(c-a)(type);
+    double firstTerm = 1.0/12.0*a(i1)*(2.0*a(i1)*(b(i0) + c(i0)) + a(i0)*(6.0*a(i1) + 4.0*(b(i1) + c(i1))) + b(i1)*(2.0*b(i0) + c(i0)) + c(i1)*(b(i0) + 2.0*c(i0)));
+    double secondTerm = 1.0/60.0*(5.0*a(i0)*(b(i1)*c(i1) + b(i1)*b(i1) + c(i1)*c(i1)) + b(i0)*(2.0*b(i1)*c(i1) + 3.0*b(i1)*b(i1) + c(i1)*c(i1)) + c(i0)*(2.0*b(i1)*c(i1) + b(i1)*b(i1) + 3.0*c(i1)*c(i1)));
+    double thirdTerm = 1.0/12.0*a(i2)*(2.0*a(i2)*(b(i0) + c(i0)) + a(i0)*(6.0*a(i2) + 4.0*(b(i2) + c(i2))) + b(i2)*(2.0*b(i0) + c(i0)) + c(i2)*(b(i0) + 2.0*c(i0)));
+    double fourthTerm = 1.0/60.0*(5.0*a(i0)*(b(i2)*c(i2) + b(i2)*b(i2) + c(i2)*c(i2)) + b(i0)*(2.0*b(i2)*c(i2) + 3.0*b(i2)*b(i2) + c(i2)*c(i2)) + c(i0)*(2.0*b(i2)*c(i2) + b(i2)*b(i2) + 3.0*c(i2)*c(i2)));
+    
+    return (firstTerm + secondTerm + thirdTerm + fourthTerm) * (b-a).cross(c-a)(type);
 }
 
 Eigen::Matrix3d
