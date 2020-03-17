@@ -77,6 +77,9 @@ private:
     int32_t rigid_body_id_;
     void computeForces(Eigen::VectorXd &Fc, Eigen::VectorXd &Ftheta);
 
+    void setM();
+    void setInertiaTensor();
+
     double time_;
     std::shared_ptr<SimParameters> params_;
 
@@ -84,6 +87,11 @@ private:
     std::vector<std::shared_ptr<RigidBodyInstance>> bodies_;
 
     std::vector<Eigen::MatrixXd> init_configurations_;
+    Eigen::MatrixXd M;
+    Eigen::MatrixXd MInv;
+    
+    Eigen::MatrixXd MInertia;
+    Eigen::MatrixXd MInertiaInv;
 };
 
 }

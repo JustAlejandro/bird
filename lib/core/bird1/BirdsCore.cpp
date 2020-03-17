@@ -7,6 +7,7 @@
 #include <Eigen/LU> // Required for .inverse()
 
 using namespace Eigen;
+using namespace std;
 
 namespace bird1 {
 
@@ -18,6 +19,32 @@ BirdsCore::BirdsCore()
 
 BirdsCore::~BirdsCore()
 {
+}
+
+void BirdsCore::setM(){
+    // Have the mass matrix filled for all Tran and Rot fields of an obj
+    if (M.rows() == bodies_.size() * 3) return;
+    M = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
+    MInv = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
+    for(int i = 0; i < bodies_.size(); i++){
+        for (int j = 0; j < 3; j++)
+        {
+            M(i*3+j, i*3+j) = bodies_[i]->density * bodies_[i]->getTemplate().getVolume();
+            MInv(i*3+j, i*3+j) =  1.0 / M(i*3+j, i*3+j);
+        }
+    }
+}
+
+void BirdsCore::setInertiaTensor(){
+    if(MInertia.rows() == bodies_.size() * 3) return;
+    MInertia = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
+
+    for (int i = 0; i < bodies_.size(); i++)
+    {
+        MInertia.block(i * 3, i * 3, 3, 3) = bodies_[i]->density * bodies_[i]->getTemplate().getInertiaTensor();  
+    }
+
+    MInertiaInv = MInertia.inverse();
 }
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd>
@@ -64,6 +91,8 @@ void BirdsCore::initSimulation()
 {
     rigid_body_id_ = 0;
     time_ = 0;
+    setM();
+    setInertiaTensor();
 }
 
 void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
