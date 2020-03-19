@@ -102,7 +102,27 @@ void BirdsCore::initSimulation()
 
 void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
 {
-    // TODO: Compute Forces here
+    Fc = VectorXd::Zero(bodies_.size() * 3);
+    Ftheta = VectorXd::Zero(bodies_.size() * 3);
+    //Only Gravity for now
+    if(params_->gravityEnabled){
+        for (int i = 0; i < bodies_.size(); i++)
+        {
+            for (int j = i+1; j < bodies_.size(); j++)
+            {
+                shared_ptr<RigidBodyInstance> c1 = bodies_[i];
+                shared_ptr<RigidBodyInstance> c2 = bodies_[j];
+                Vector3d diff = c1->c - c2->c;
+                
+                Vector3d grav = params_->gravityG * c1->density * c1->getTemplate().getVolume()
+                    * c2->density * c2->getTemplate().getVolume()
+                    *(1.0 / diff.squaredNorm()) * diff.normalized();
+                
+                Fc.segment(i * 3, 3) += grav;
+                Fc.segment(j * 3, 3) -= grav;
+            }
+        }
+    }
 }
 
 Vector3d BirdsCore::FNewton(const Vector3d& wGuess, const Vector3d& oldW, const SparseMatrix<double>& Inertia, const SparseMatrix<double>& InertiaInv) {
@@ -177,6 +197,7 @@ void BirdsCore::updateInstances(int nbodies){
 }
 
 void BirdsCore::simpleTimeIntegrator(int nbodies){
+
     for (int i = 0; i < nbodies; i++)
     {
         shared_ptr<RigidBodyInstance> b = bodies_[i];
@@ -187,13 +208,17 @@ void BirdsCore::simpleTimeIntegrator(int nbodies){
         
         //No Potential here since gravity not in yet
         qDot.segment(i * 6, 3) = qDotPrev.segment(i * 6, 3);
-        
-        if(params_->gravityEnabled){
-
-        }
 
         qDot.segment(i*6+3, 3) = newtonsMethod(qDot.segment(i*6+3, 3), MInertia.block(i*3,i*3,3,3), MInertiaInv.block(i*3,i*3,3,3));
     }
+
+    VectorXd transForce, rotForce;
+    computeForces(transForce, rotForce);
+    for (int i = 0; i < nbodies; i++)
+    {
+        qDot.segment(i*6, 3) += -params_->timeStep * MInv.block(i*3, i*3, 3, 3) * transForce.segment(i * 3, 3);
+    }
+    
 }
 
 bool BirdsCore::simulateOneStep()
