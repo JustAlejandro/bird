@@ -77,8 +77,18 @@ private:
     int32_t rigid_body_id_;
     void computeForces(Eigen::VectorXd &Fc, Eigen::VectorXd &Ftheta);
 
-    void setM();
-    void setInertiaTensor();
+    void setM(int nbodies = 0);
+    void setInertiaTensor(int nbodies = 0);
+    void setupConfigVector(int nbodies);
+    void setupConfigVelVector(int nbodies);
+
+    void updateInstances(int nbodies);
+
+    void simpleTimeIntegrator(int nbodies);
+
+    Eigen::Vector3d newtonsMethod(const Eigen::Vector3d& oldW, const Eigen::SparseMatrix<double>& Inertia, const Eigen::SparseMatrix<double>& InertiaInv);
+    Eigen::Vector3d FNewton(const Eigen::Vector3d& wGuess, const Eigen::Vector3d& oldW, const Eigen::SparseMatrix<double>& Inertia, const Eigen::SparseMatrix<double>& InertiaInv);
+    Eigen::Matrix3d dFNewton(const Eigen::Vector3d& wGuess, const Eigen::Vector3d& oldW, const Eigen::SparseMatrix<double>& Inertia, const Eigen::SparseMatrix<double>& InertiaInv);
 
     double time_;
     std::shared_ptr<SimParameters> params_;
@@ -87,11 +97,17 @@ private:
     std::vector<std::shared_ptr<RigidBodyInstance>> bodies_;
 
     std::vector<Eigen::MatrixXd> init_configurations_;
-    Eigen::MatrixXd M;
-    Eigen::MatrixXd MInv;
+    Eigen::SparseMatrix<double> M;
+    Eigen::SparseMatrix<double> MInv;
     
-    Eigen::MatrixXd MInertia;
-    Eigen::MatrixXd MInertiaInv;
+    Eigen::SparseMatrix<double> MInertia;
+    Eigen::SparseMatrix<double> MInertiaInv;
+
+    Eigen::VectorXd q;
+    Eigen::VectorXd qPrev;
+
+    Eigen::VectorXd qDot;
+    Eigen::VectorXd qDotPrev;
 };
 
 }

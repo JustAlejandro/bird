@@ -21,30 +21,35 @@ BirdsCore::~BirdsCore()
 {
 }
 
-void BirdsCore::setM(){
+void BirdsCore::setM(int nbodies){
     // Have the mass matrix filled for all Tran and Rot fields of an obj
-    if (M.rows() == bodies_.size() * 3) return;
-    M = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
-    MInv = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
+    if (M.rows() == nbodies * 3) return;
+    MatrixXd MTemp = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
+    MatrixXd MInvTemp = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
     for(int i = 0; i < bodies_.size(); i++){
         for (int j = 0; j < 3; j++)
         {
-            M(i*3+j, i*3+j) = bodies_[i]->density * bodies_[i]->getTemplate().getVolume();
-            MInv(i*3+j, i*3+j) =  1.0 / M(i*3+j, i*3+j);
+            MTemp(i*3+j, i*3+j) = bodies_[i]->density * bodies_[i]->getTemplate().getVolume();
+            MInvTemp(i*3+j, i*3+j) =  1.0 / MTemp(i*3+j, i*3+j);
         }
     }
+    M = MTemp.sparseView();
+    MInv = MInvTemp.sparseView();
 }
 
-void BirdsCore::setInertiaTensor(){
-    if(MInertia.rows() == bodies_.size() * 3) return;
-    MInertia = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
+void BirdsCore::setInertiaTensor(int nbodies){
+    if(MInertia.rows() == nbodies * 3) return;
+    MatrixXd MInertiaTemp = MatrixXd::Zero(bodies_.size() * 3, bodies_.size() * 3);
 
     for (int i = 0; i < bodies_.size(); i++)
     {
-        MInertia.block(i * 3, i * 3, 3, 3) = bodies_[i]->density * bodies_[i]->getTemplate().getInertiaTensor();  
+        MInertiaTemp.block(i * 3, i * 3, 3, 3) = bodies_[i]->density * bodies_[i]->getTemplate().getInertiaTensor();  
     }
 
-    MInertiaInv = MInertia.inverse();
+    MatrixXd MInertiaInvTemp = MInertiaTemp.inverse();
+
+    MInertia = MInertiaTemp.sparseView();
+    MInertiaInv = MInertiaInvTemp.sparseView();
 }
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd>
@@ -100,12 +105,111 @@ void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
     // TODO: Compute Forces here
 }
 
+Vector3d BirdsCore::FNewton(const Vector3d& wGuess, const Vector3d& oldW, const SparseMatrix<double>& Inertia, const SparseMatrix<double>& InertiaInv) {
+    return wGuess - (oldW.transpose() * Inertia * VectorMath::TMatrix(params_->timeStep * oldW).inverse()
+        * VectorMath::TMatrix(-params_->timeStep * wGuess) * InertiaInv).transpose();
+}
+
+Matrix3d BirdsCore::dFNewton(const Vector3d& wGuess, const Vector3d& oldW, const SparseMatrix<double>& Inertia, const SparseMatrix<double>& InertiaInv){
+    return Matrix3d::Identity(3,3);
+}
+
+//Computes Newton's for a single object
+Vector3d BirdsCore::newtonsMethod(const Vector3d& oldW, const SparseMatrix<double>& Inertia, const SparseMatrix<double>& InertiaInv){
+    Vector3d wGuess = oldW;
+
+    int iter = 0;
+    while (FNewton(wGuess, oldW, Inertia, InertiaInv).squaredNorm() > (params_->NewtonTolerance*params_->NewtonTolerance) && iter < params_->NewtonMaxIters){
+        SparseMatrix<double> df = dFNewton(wGuess, oldW, Inertia, InertiaInv).sparseView();
+        //Eigen::SparseQR<SparseMatrix<double>, COLAMDOrdering<int> > solver(df);
+
+        //solver.analyzePattern(df);
+        //solver.factorize(df);
+
+        //wGuess += solver.solve(-FNewton(wGuess, oldW, Inertia, InertiaInv));
+        wGuess += -FNewton(wGuess, oldW, Inertia, InertiaInv);
+        
+        iter++;
+    }
+    return wGuess;
+}
+void BirdsCore::setupConfigVector(int nbodies){
+    qPrev = q;
+    q = VectorXd(6 * nbodies);
+
+    for (int i = 0; i < nbodies; i++)
+    {
+        q.segment(i * 6, 3) = bodies_[i]->c;
+        q.segment(i * 6 + 3, 3) = bodies_[i]->theta;
+    }
+
+    if(q.size() != qPrev.size()) {
+        qPrev = q;
+    }
+}
+
+void BirdsCore::setupConfigVelVector(int nbodies){
+    qDotPrev = qDot;
+    qDot = VectorXd(6 * nbodies);
+
+    for (int i = 0; i < nbodies; i++)
+    {
+        qDot.segment(i * 6, 3) = bodies_[i]->cvel;
+        qDot.segment(i * 6 + 3, 3) = bodies_[i]->w;
+    }
+
+    if(qDot.size() != qDotPrev.size()) {
+        qDotPrev = qDot;
+    }
+}
+
+//Updates the config and velocity of all RigidBodyInstance(s) in scene
+void BirdsCore::updateInstances(int nbodies){
+    for (int i = 0; i < nbodies; i++)
+    {
+        shared_ptr<RigidBodyInstance> b = bodies_[i];
+        b->c = q.segment(i * 6, 3);
+        b->theta = q.segment(i * 6 + 3, 3);
+        b->cvel = qDot.segment(i * 6, 3);
+        b->w = qDot.segment(i*6+3, 3);
+    }
+    
+}
+
+void BirdsCore::simpleTimeIntegrator(int nbodies){
+    for (int i = 0; i < nbodies; i++)
+    {
+        shared_ptr<RigidBodyInstance> b = bodies_[i];
+        q.segment(i * 6, 3) = b->c +  params_->timeStep * b->cvel;
+        q.segment(i * 6 + 3, 3) = VectorMath::axisAngle(
+            VectorMath::rotationMatrix(b->theta)
+            * VectorMath::rotationMatrix(params_->timeStep * b->w));
+        
+        //No Potential here since gravity not in yet
+        qDot.segment(i * 6, 3) = qDotPrev.segment(i * 6, 3);
+        
+        if(params_->gravityEnabled){
+
+        }
+
+        qDot.segment(i*6+3, 3) = newtonsMethod(qDot.segment(i*6+3, 3), MInertia.block(i*3,i*3,3,3), MInertiaInv.block(i*3,i*3,3,3));
+    }
+}
+
 bool BirdsCore::simulateOneStep()
 {
     time_ += params_->timeStep;
     int nbodies = (int)bodies_.size();
 
     // TODO: Implement Time Integrator here
+    setM(nbodies);
+    setInertiaTensor(nbodies);
+    setupConfigVector(nbodies);
+    setupConfigVelVector(nbodies);
+
+    simpleTimeIntegrator(nbodies);
+
+    updateInstances(nbodies);
 
     return false;
 }
