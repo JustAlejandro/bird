@@ -12,7 +12,9 @@ struct SimParameters
         NewtonTolerance = 1e-8;
         
         gravityEnabled = true;
-        gravityG = 1.0;                
+        gravityG = 1.0;       
+        
+        collisionEnabled = false;         
     }
 
     float timeStep;
@@ -21,6 +23,8 @@ struct SimParameters
     
     bool gravityEnabled;
     float gravityG;    
+
+    bool collisionEnabled;
 };
 
 }

@@ -52,6 +52,22 @@ void BirdsCore::setInertiaTensor(int nbodies){
     MInertiaInv = MInertiaInvTemp.sparseView();
 }
 
+void checkCollision(const shared_ptr<RigidBodyInstance>& c1, const shared_ptr<RigidBodyInstance>& c2, const int& i, const int& j){
+    if((c1->c - c2->c).squaredNorm() < pow((c1->getTemplate().getBoundingRadius() + c2->getTemplate().getBoundingRadius()), 2.0)){
+        c1->collided.insert(j);
+        for(int k : c2->collided){
+            c1->collided.insert(k);
+        }
+        
+        c2->collided.insert(i);
+        for(int k : c1->collided){
+            c2->collided.insert(k);
+        }
+    }
+    c1->inelasticCalculated = false;
+    c2->inelasticCalculated = false;
+}
+
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd>
 BirdsCore::getCurrentMesh() const
 {
@@ -117,9 +133,10 @@ void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
                 Vector3d grav = params_->gravityG * c1->density * c1->getTemplate().getVolume()
                     * c2->density * c2->getTemplate().getVolume()
                     *(1.0 / diff.squaredNorm()) * diff.normalized();
-                
                 Fc.segment(i * 3, 3) += grav;
                 Fc.segment(j * 3, 3) -= grav;
+
+                checkCollision(c1, c2, i, j);
             }
         }
     }
@@ -214,11 +231,35 @@ void BirdsCore::simpleTimeIntegrator(int nbodies){
 
     VectorXd transForce, rotForce;
     computeForces(transForce, rotForce);
+
+    //Need to save a copy to read old values post modification.
+    VectorXd qDotCollision = qDot;
+
     for (int i = 0; i < nbodies; i++)
     {
-        qDot.segment(i*6, 3) += -params_->timeStep * MInv.block(i*3, i*3, 3, 3) * transForce.segment(i * 3, 3);
+        if(!bodies_[i]->inelasticCalculated){
+            if(bodies_[i]->collided.size() != 0){
+                //Momentum calc
+                Vector3d momentumSum = bodies_[i]->mass * qDotCollision.segment(i*6, 3);
+                double massSum = bodies_[i]->mass;
+                for(int j : bodies_[i]->collided) {
+                    momentumSum += bodies_[j]->mass * qDotCollision.segment(j*6, 3);
+                    massSum += bodies_[j]->mass;
+                }
+
+                qDot.segment(i*6, 3) = momentumSum / massSum;
+                bodies_[i]->inelasticCalculated = true;
+                
+                for(int j : bodies_[i]->collided){
+                    qDot.segment(j*6, 3) = momentumSum / massSum;
+                    bodies_[j]->inelasticCalculated = true;
+                }
+            }
+            else{
+                qDot.segment(i*6, 3) += -params_->timeStep * MInv.block(i*3, i*3, 3, 3) * transForce.segment(i * 3, 3);
+            }
+        }
     }
-    
 }
 
 bool BirdsCore::simulateOneStep()

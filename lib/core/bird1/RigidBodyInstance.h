@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <list>
 #include <vector>
+#include <set>
 
 namespace bird1 {
 
@@ -26,7 +27,14 @@ public:
     Eigen::Vector3d cvel;
     Eigen::Vector3d w;
 
+    //Index of the objects colliding with this object
+    std::set<int> collided;
+
+    bool inelasticCalculated;
+
     double density;
+
+    double mass;
     
     const RigidBodyTemplate &getTemplate() const {return rbtemplate_;}
     

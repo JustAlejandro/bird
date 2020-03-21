@@ -29,6 +29,7 @@ void RigidBodyTemplate::initialize()
     volume_ = computeVolume();
     com_ = computeCenterOfMass();
     translateCOM();
+    computeRadius();
     // TODO: Translate center of mass to origin
     inertiaTensor_ = computeInertiaTensor();    
 }
@@ -80,6 +81,14 @@ Vector3d RigidBodyTemplate::computeCenterOfMass()
     }
 
     return (cm / 2.0) / volume_;
+}
+
+void RigidBodyTemplate::computeRadius(){
+    radius_ = 0.0000001;
+    for (int i = 0; i < V.rows(); i++)
+    {
+        radius_ = max(radius_, V.row(i).norm());
+    }
 }
 
 // a^2 + b (2 a u + b u^2 + 2 c u v) + c (2 a v + c v^2)

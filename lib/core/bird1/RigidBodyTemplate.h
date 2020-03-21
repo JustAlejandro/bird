@@ -34,6 +34,7 @@ private:
     // Not included in starter code
     void computeFaces();
     double computeVolume();
+    void computeRadius();
     Eigen::Vector3d computeCenterOfMass();
     Eigen::Matrix3d computeInertiaTensor();
     void translateCOM();

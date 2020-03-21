@@ -22,6 +22,7 @@ void BirdsHook::drawGUI(igl::opengl::glfw::imgui::ImGuiMenu &menu)
     }
     if (ImGui::CollapsingHeader("Forces", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        ImGui::Checkbox("Collisions Enabled", &params_.collisionEnabled);
         ImGui::Checkbox("Gravity Enabled", &params_.gravityEnabled);
         ImGui::InputFloat("Gravity G", &params_.gravityG, 0, 0, 3);
     }
