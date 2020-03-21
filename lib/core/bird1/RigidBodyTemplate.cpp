@@ -84,11 +84,11 @@ Vector3d RigidBodyTemplate::computeCenterOfMass()
 }
 
 void RigidBodyTemplate::computeRadius(){
-    radius_ = 0.0000001;
     for (int i = 0; i < V.rows(); i++)
     {
         radius_ = max(radius_, V.row(i).norm());
     }
+    cout << "Radius is: " << radius_ << endl;
 }
 
 // a^2 + b (2 a u + b u^2 + 2 c u v) + c (2 a v + c v^2)
