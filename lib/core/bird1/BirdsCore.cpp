@@ -154,7 +154,7 @@ void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
 
                 bool hit = checkCollision(c1, c2, i, j, params_->elasticEnabled);
 
-                if(params_->gravityEnabled && !hit){
+                if(params_->gravityEnabled && !(hit && (params_->elasticEnabled || params_->inelasticEnabled))){
                     Vector3d diff = c1->c - c2->c;
                     
                     Vector3d grav = params_->gravityG * c1->density * c1->getTemplate().getVolume()
@@ -297,27 +297,22 @@ void BirdsCore::simpleTimeIntegrator(int nbodies){
                 qDot.segment(i*6, 3) = qDotGrav.segment(i*6, 3);
             }
         }
-        cout << "Qdot POST ALL is:\n" << qDot.segment(i*6, 3) << "\n\n\n";
     }
 }
 
 void BirdsCore::elasticCollision(int i, const VectorXd& qDotGrav){
     Vector3d totalVelocity = qDotGrav.segment(i*6, 3);
     Vector3d iVel = totalVelocity;
-    cout << "Velocity pre-Collide: \n" << totalVelocity<< endl;
 
     for(int j : bodies_[i]->collided){
         //Normal to the collision plane
-        Vector3d norm = bodies_[j]->c - bodies_[i]->c;
-        cout << "Norm: " << endl << norm << endl;
+        Vector3d norm = q.segment(j * 6, 3) - q.segment(i * 6, 3);
 
         Vector3d iVel = totalVelocity;
         Vector3d jVel = qDotGrav.segment(j*6, 3);
         //Project the forces
         Vector3d projIVel = (iVel.dot(norm) / norm.squaredNorm()) * norm;
         Vector3d projJVel = (jVel.dot(norm) / norm.squaredNorm()) * norm;
-        cout << "ProjI Vel: " << endl << projIVel << endl;
-        cout << "ProjJ Vel: " << endl << projJVel << endl;
         
         Vector3d tanIVel = iVel - projIVel;
 
@@ -327,10 +322,13 @@ void BirdsCore::elasticCollision(int i, const VectorXd& qDotGrav){
             + ((2*bodies_[j]->mass)/totalMass) * projJVel;
         
         totalVelocity += tanIVel;
-        cout << "Total Velocity of " << i << endl << totalVelocity << "\n\n\n";
+
+        if((q.segment(i * 6, 3) - q.segment(j * 6, 3)).norm() < (bodies_[i]->getTemplate().getBoundingRadius() + bodies_[j]->getTemplate().getBoundingRadius())){
+            q.segment(j * 6, 3) = (bodies_[i]->getTemplate().getBoundingRadius() + bodies_[j]->getTemplate().getBoundingRadius()) * norm.normalized()
+                + q.segment(i*6,3);
+        }
     }
     qDot.segment(i*6, 3) = totalVelocity;
-    cout << "Qdot is:\n" << qDot.segment(i*6, 3) << "\n\n\n";
 }
 
 bool BirdsCore::simulateOneStep()
