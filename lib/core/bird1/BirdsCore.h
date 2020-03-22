@@ -90,6 +90,8 @@ private:
     Eigen::Vector3d FNewton(const Eigen::Vector3d& wGuess, const Eigen::Vector3d& oldW, const Eigen::SparseMatrix<double>& Inertia, const Eigen::SparseMatrix<double>& InertiaInv);
     Eigen::Matrix3d dFNewton(const Eigen::Vector3d& wGuess, const Eigen::Vector3d& oldW, const Eigen::SparseMatrix<double>& Inertia, const Eigen::SparseMatrix<double>& InertiaInv);
 
+    void elasticCollision(int i, const Eigen::VectorXd& qDotGrav);
+
     double time_;
     std::shared_ptr<SimParameters> params_;
 

@@ -52,8 +52,16 @@ void BirdsCore::setInertiaTensor(int nbodies){
     MInertiaInv = MInertiaInvTemp.sparseView();
 }
 
-void checkCollision(const shared_ptr<RigidBodyInstance>& c1, const shared_ptr<RigidBodyInstance>& c2, const int& i, const int& j){
-    if((c1->c - c2->c).norm() < (c1->getTemplate().getBoundingRadius() + c2->getTemplate().getBoundingRadius())){
+bool checkCollision(const shared_ptr<RigidBodyInstance>& c1, const shared_ptr<RigidBodyInstance>& c2, const int& i, const int& j, const bool& elastic){
+    bool hit = false;
+
+    //Inelastic never gets unstuck, so no need to check every step
+    if(!elastic && c1->collided.find(j) != c1->collided.end()){
+        hit = true;
+    }
+
+    //Discover collisions
+    else if((c1->c - c2->c).norm() < (c1->getTemplate().getBoundingRadius() + c2->getTemplate().getBoundingRadius())){
         c1->collided.insert(j);
         for(int k : c2->collided){
             if(k != i){
@@ -67,9 +75,20 @@ void checkCollision(const shared_ptr<RigidBodyInstance>& c1, const shared_ptr<Ri
                 c2->collided.insert(k);
             }
         }
+        hit = true;
     }
-    c1->inelasticCalculated = false;
-    c2->inelasticCalculated = false;
+
+    //Erase collisions if inelastic
+    else if(elastic){
+        c1->collided.erase(j);
+        c2->collided.erase(i);
+        hit = false;
+    }
+
+    c1->collisionCalculated = false;
+    c2->collisionCalculated = false;
+
+    return hit;
 }
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd>
@@ -125,14 +144,17 @@ void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
     Fc = VectorXd::Zero(bodies_.size() * 3);
     Ftheta = VectorXd::Zero(bodies_.size() * 3);
     //Only Gravity for now
-    if(params_->gravityEnabled || params_->collisionEnabled){
+    if(params_->gravityEnabled || params_->inelasticEnabled || params_->elasticEnabled){
         for (int i = 0; i < bodies_.size(); i++)
         {
             for (int j = i+1; j < bodies_.size(); j++)
             {
                 shared_ptr<RigidBodyInstance> c1 = bodies_[i];
                 shared_ptr<RigidBodyInstance> c2 = bodies_[j];
-                if(params_->gravityEnabled){
+
+                bool hit = checkCollision(c1, c2, i, j, params_->elasticEnabled);
+
+                if(params_->gravityEnabled && !hit){
                     Vector3d diff = c1->c - c2->c;
                     
                     Vector3d grav = params_->gravityG * c1->density * c1->getTemplate().getVolume()
@@ -140,9 +162,6 @@ void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
                         *(1.0 / diff.squaredNorm()) * diff.normalized();
                     Fc.segment(i * 3, 3) += grav;
                     Fc.segment(j * 3, 3) -= grav;
-                }
-                if(params_->collisionEnabled){
-                    checkCollision(c1, c2, i, j);
                 }
             }
         }
@@ -239,31 +258,79 @@ void BirdsCore::simpleTimeIntegrator(int nbodies){
     VectorXd transForce, rotForce;
     computeForces(transForce, rotForce);
 
+    //Precalc Q with Gravity if no collisions occur
+    VectorXd qDotGrav = qDot;
+    for(int i; params_->gravityEnabled && i < nbodies; i++){
+        qDotGrav.segment(i*6, 3) += -params_->timeStep * MInv.block(i*3, i*3, 3, 3) * transForce.segment(i * 3, 3);
+    }
+
     for (int i = 0; i < nbodies; i++)
     {
-        if(!params_->collisionEnabled || !bodies_[i]->inelasticCalculated){
-            if(params_->collisionEnabled && bodies_[i]->collided.size() != 0){
+        if(!params_->inelasticEnabled || !params_->elasticEnabled || !bodies_[i]->collisionCalculated){
+            if(params_->inelasticEnabled && bodies_[i]->collided.size() != 0 && !params_->elasticEnabled){
                 //Momentum calc
                 Vector3d momentumSum = bodies_[i]->mass * qDot.segment(i*6, 3);
                 double massSum = bodies_[i]->mass;
+
+                Vector3d totalGravityForce = transForce.segment(i * 3, 3);
+                Matrix3d MTotal = M.block(i*3, i*3, 3, 3);
+
                 for(int j : bodies_[i]->collided) {
                     momentumSum += bodies_[j]->mass * qDot.segment(j*6, 3);
                     massSum += bodies_[j]->mass;
+                    totalGravityForce += transForce.segment(j * 3, 3);
+                    MTotal += M.block(j*3, j*3, 3, 3);
                 }
-
-                qDot.segment(i*6, 3) = momentumSum / massSum;
-                bodies_[i]->inelasticCalculated = true;
+                MTotal = MTotal.inverse();
+                qDot.segment(i*6, 3) = momentumSum / massSum - params_->timeStep * MTotal * totalGravityForce;
+                bodies_[i]->collisionCalculated = true;
                 
                 for(int j : bodies_[i]->collided){
-                    qDot.segment(j*6, 3) = momentumSum / massSum;
-                    bodies_[j]->inelasticCalculated = true;
+                    qDot.segment(j*6, 3) = momentumSum / massSum - params_->timeStep * MTotal * totalGravityForce;
+                    bodies_[j]->collisionCalculated = true;
                 }
             }
+            else if(params_->elasticEnabled && bodies_[i]->collided.size() != 0){
+                elasticCollision(i, qDotGrav);
+            }
             else{
-                qDot.segment(i*6, 3) += -params_->timeStep * MInv.block(i*3, i*3, 3, 3) * transForce.segment(i * 3, 3);
+                qDot.segment(i*6, 3) = qDotGrav.segment(i*6, 3);
             }
         }
+        cout << "Qdot POST ALL is:\n" << qDot.segment(i*6, 3) << "\n\n\n";
     }
+}
+
+void BirdsCore::elasticCollision(int i, const VectorXd& qDotGrav){
+    Vector3d totalVelocity = qDotGrav.segment(i*6, 3);
+    Vector3d iVel = totalVelocity;
+    cout << "Velocity pre-Collide: \n" << totalVelocity<< endl;
+
+    for(int j : bodies_[i]->collided){
+        //Normal to the collision plane
+        Vector3d norm = bodies_[j]->c - bodies_[i]->c;
+        cout << "Norm: " << endl << norm << endl;
+
+        Vector3d iVel = totalVelocity;
+        Vector3d jVel = qDotGrav.segment(j*6, 3);
+        //Project the forces
+        Vector3d projIVel = (iVel.dot(norm) / norm.squaredNorm()) * norm;
+        Vector3d projJVel = (jVel.dot(norm) / norm.squaredNorm()) * norm;
+        cout << "ProjI Vel: " << endl << projIVel << endl;
+        cout << "ProjJ Vel: " << endl << projJVel << endl;
+        
+        Vector3d tanIVel = iVel - projIVel;
+
+        double totalMass = bodies_[i]->mass + bodies_[j]->mass;
+        double diffMass = bodies_[i]->mass - bodies_[j]->mass;
+        totalVelocity = (diffMass/totalMass)*projIVel
+            + ((2*bodies_[j]->mass)/totalMass) * projJVel;
+        
+        totalVelocity += tanIVel;
+        cout << "Total Velocity of " << i << endl << totalVelocity << "\n\n\n";
+    }
+    qDot.segment(i*6, 3) = totalVelocity;
+    cout << "Qdot is:\n" << qDot.segment(i*6, 3) << "\n\n\n";
 }
 
 bool BirdsCore::simulateOneStep()

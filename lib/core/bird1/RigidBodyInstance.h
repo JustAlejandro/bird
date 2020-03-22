@@ -30,7 +30,7 @@ public:
     //Index of the objects colliding with this object
     std::set<int> collided;
 
-    bool inelasticCalculated;
+    bool collisionCalculated;
 
     double density;
 

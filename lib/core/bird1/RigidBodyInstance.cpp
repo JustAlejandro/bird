@@ -15,7 +15,7 @@ RigidBodyInstance::RigidBodyInstance(const RigidBodyTemplate &rbtemplate,
     double density)
     : c(c), theta(theta), cvel(cvel), w(w), density(density), rbtemplate_(rbtemplate)
 {
-    inelasticCalculated = false;
+    collisionCalculated = false;
     mass = density * rbtemplate.getVolume();
 }
 

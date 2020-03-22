@@ -14,7 +14,8 @@ struct SimParameters
         gravityEnabled = true;
         gravityG = 1.0;       
         
-        collisionEnabled = false;         
+        inelasticEnabled = false;   
+        elasticEnabled = false;    
     }
 
     float timeStep;
@@ -24,7 +25,8 @@ struct SimParameters
     bool gravityEnabled;
     float gravityG;    
 
-    bool collisionEnabled;
+    bool inelasticEnabled;
+    bool elasticEnabled;
 };
 
 }
