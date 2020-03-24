@@ -155,10 +155,9 @@ void BirdsCore::computeForces(VectorXd &Fc, VectorXd &Ftheta)
                 bool hit = checkCollision(c1, c2, i, j, params_->elasticEnabled);
 
                 if(params_->gravityEnabled && !(hit && (params_->elasticEnabled || params_->inelasticEnabled))){
-                    Vector3d diff = c1->c - c2->c;
+                    Vector3d diff = q.segment(i * 6, 3) - q.segment(j * 6, 3);
                     
-                    Vector3d grav = params_->gravityG * c1->density * c1->getTemplate().getVolume()
-                        * c2->density * c2->getTemplate().getVolume()
+                    Vector3d grav = params_->gravityG * c1->mass * c2->mass
                         *(1.0 / diff.squaredNorm()) * diff.normalized();
                     Fc.segment(i * 3, 3) += grav;
                     Fc.segment(j * 3, 3) -= grav;
